@@ -1,0 +1,7 @@
+package: github.com/bborbe/backup_rsync
+import:
+- package: github.com/bborbe/cron
+- package: github.com/bborbe/flagenv
+- package: github.com/golang/glog
+testImport:
+- package: github.com/bborbe/assert
