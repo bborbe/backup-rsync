@@ -6,9 +6,9 @@ import (
 	"testing"
 )
 
-func TestCleanup(t *testing.T) {
+func TestRsync(t *testing.T) {
 	err := rsync(context.Background())
-	if err := AssertThat(err, NilValue()); err != nil {
+	if err := AssertThat(err, NotNilValue()); err != nil {
 		t.Fatal(err)
 	}
 }

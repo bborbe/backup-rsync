@@ -39,11 +39,37 @@ func (b *backupArchiver) Run(ctx context.Context) error {
 	glog.V(1).Info("archiv started")
 	defer glog.V(1).Info("archiv finished")
 
+	if err := b.validate(); err != nil {
+		return err
+	}
+
 	if err := b.runRsync(ctx); err != nil {
 		glog.V(1).Infof("run rsync failed: %v", err)
 		return err
 	}
 
+	return nil
+}
+
+func (b *backupArchiver) validate() error {
+	if len(b.backupSourceDirectory) == 0 {
+		return fmt.Errorf("backup directory invalid")
+	}
+	if len(b.remoteHost) == 0 {
+		return fmt.Errorf("remote host invalid")
+	}
+	if b.remotePort <= 0 {
+		return fmt.Errorf("remote port invalid")
+	}
+	if len(b.remoteUser) == 0 {
+		return fmt.Errorf("remote user invalid")
+	}
+	if len(b.linkDest) == 0 {
+		return fmt.Errorf("link dest invalid")
+	}
+	if len(b.remoteDirectory) == 0 {
+		return fmt.Errorf("remote directory invalid")
+	}
 	return nil
 }
 

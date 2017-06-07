@@ -4,23 +4,24 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/bborbe/backup_rsync/model"
 	"golang.org/x/crypto/ssh"
 	"time"
 )
 
 type backupSsh struct {
-	user       string
-	addr       string
-	port       int
-	privateKey []byte
+	user       model.RemoteUser
+	addr       model.RemoteHost
+	port       model.RemotePort
+	privateKey model.PrivateKey
 	cmd        string
 }
 
 func New(
-	user string,
-	addr string,
-	port int,
-	privateKey []byte,
+	user model.RemoteUser,
+	addr model.RemoteHost,
+	port model.RemotePort,
+	privateKey model.PrivateKey,
 	cmd string,
 ) *backupSsh {
 	b := new(backupSsh)
@@ -38,7 +39,7 @@ func (b *backupSsh) Run(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("parse private key failed: %v", err)
 	}
 	config := &ssh.ClientConfig{
-		User: b.user,
+		User: b.user.String(),
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},

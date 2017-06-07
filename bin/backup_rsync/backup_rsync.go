@@ -67,5 +67,6 @@ func rsync(ctx context.Context) error {
 	remoteTargetDirectory := model.RemoteTargetDirectory(*remoteTargetDirectoryPtr)
 
 	backupArchiver := archiver.New(backupSourceDirectory, remoteHost, remotePort, remoteUser, linkDest, remoteTargetDirectory)
+
 	return backupArchiver.Run(ctx)
 }
