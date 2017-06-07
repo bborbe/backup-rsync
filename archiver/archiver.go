@@ -35,7 +35,7 @@ func New(
 	return b
 }
 
-func (b *backupArchiver) Archiv(ctx context.Context) error {
+func (b *backupArchiver) Run(ctx context.Context) error {
 	glog.V(1).Info("archiv started")
 	defer glog.V(1).Info("archiv finished")
 
