@@ -5,13 +5,14 @@ import (
 	"context"
 	"fmt"
 	"golang.org/x/crypto/ssh"
+	"time"
 )
 
 type backupSsh struct {
 	user       string
 	addr       string
 	port       int
-	privateKey string
+	privateKey []byte
 	cmd        string
 }
 
@@ -19,7 +20,7 @@ func New(
 	user string,
 	addr string,
 	port int,
-	privateKey string,
+	privateKey []byte,
 	cmd string,
 ) *backupSsh {
 	b := new(backupSsh)
@@ -32,23 +33,24 @@ func New(
 }
 
 func (b *backupSsh) Run(ctx context.Context) (string, error) {
-	key, err := ssh.ParsePrivateKey([]byte(b.privateKey))
+	key, err := ssh.ParsePrivateKey(b.privateKey)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("parse private key failed: %v", err)
 	}
 	config := &ssh.ClientConfig{
 		User: b.user,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
+		Timeout: 5 * time.Second,
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", b.addr, b.port), config)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ssh connect failed: %v", err)
 	}
 	session, err := client.NewSession()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("create ssh session failed: %v", err)
 	}
 	defer session.Close()
 	var buffer bytes.Buffer
