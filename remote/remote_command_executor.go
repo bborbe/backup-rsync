@@ -49,7 +49,8 @@ func (r *remoteExecutor) ExecuteCommand(ctx context.Context, cmd string) (string
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
-		Timeout: r.timeout,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         r.timeout,
 	}
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", r.addr, r.port), config)
 	if err != nil {

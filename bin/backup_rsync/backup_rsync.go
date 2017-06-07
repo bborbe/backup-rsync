@@ -21,7 +21,6 @@ const (
 	parameterHost       = "host"
 	parameterPort       = "port"
 	parameterUser       = "user"
-	parameterLink       = "link"
 	parameterTarget     = "target"
 	parameterPrivateKey = "privatekey"
 )
@@ -33,9 +32,8 @@ var (
 	remoteHostPtr            = flag.String(parameterHost, "", "remote host name")
 	remotePortPtr            = flag.Int(parameterPort, 22, "remote ssh port")
 	remoteUserPtr            = flag.String(parameterUser, "", "remote user name")
-	linkDestPtr              = flag.String(parameterLink, "", "link dest")
 	remoteTargetDirectoryPtr = flag.String(parameterTarget, "", "remote target directory")
-	privateKeyPtr            = flag.String(parameterPrivateKey, "", "private key")
+	privateKeyPtr            = flag.String(parameterPrivateKey, "~/.ssh/id_rsa", "private key")
 )
 
 func main() {
@@ -73,7 +71,6 @@ func rsync(ctx context.Context) error {
 		model.RemotePort(*remotePortPtr),
 		model.RemoteUser(*remoteUserPtr),
 		privateKey,
-		model.LinkDest(*linkDestPtr),
 		model.RemoteTargetDirectory(*remoteTargetDirectoryPtr),
 		time.Now(),
 	)

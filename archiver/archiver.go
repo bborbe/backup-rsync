@@ -16,7 +16,6 @@ type backupArchiver struct {
 	remotePort            model.RemotePort
 	remoteUser            model.RemoteUser
 	privateKey            model.PrivateKey
-	linkDest              model.LinkDest
 	remoteDirectory       model.RemoteTargetDirectory
 	today                 time.Time
 }
@@ -27,7 +26,6 @@ func New(
 	remotePort model.RemotePort,
 	remoteUser model.RemoteUser,
 	privateKey model.PrivateKey,
-	linkDest model.LinkDest,
 	remoteDirectory model.RemoteTargetDirectory,
 	today time.Time,
 ) *backupArchiver {
@@ -37,7 +35,6 @@ func New(
 	b.remotePort = remotePort
 	b.remoteUser = remoteUser
 	b.privateKey = privateKey
-	b.linkDest = linkDest
 	b.remoteDirectory = remoteDirectory
 	b.today = today
 	return b
@@ -123,9 +120,6 @@ func (b *backupArchiver) validate() error {
 	if len(b.remoteUser) == 0 {
 		return fmt.Errorf("remote user invalid")
 	}
-	if len(b.linkDest) == 0 {
-		return fmt.Errorf("link dest invalid")
-	}
 	if len(b.remoteDirectory) == 0 {
 		return fmt.Errorf("remote directory invalid")
 	}
@@ -142,9 +136,9 @@ func (b *backupArchiver) rsync(ctx context.Context) error {
 		"--delete",
 		"--delete-excluded",
 		fmt.Sprintf("--port=%d", b.remotePort),
-		fmt.Sprintf("--link-dest=%s", b.linkDest),
+		fmt.Sprintf("--link-dest=%s", "current"),
 		fmt.Sprintf("%s", b.backupSourceDirectory),
-		fmt.Sprintf("ssh://%s@%s:%d/%s", b.remoteUser, b.remoteHost, b.remotePort, b.remoteDirectory),
+		fmt.Sprintf("ssh://%s@%s:%d%s", b.remoteUser, b.remoteHost, b.remotePort, b.remoteDirectory),
 	)
 	return rsyncCommand.Run(ctx)
 }

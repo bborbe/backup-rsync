@@ -14,7 +14,12 @@ check: lint vet errcheck
 run:
 	backup_rsync \
 	-logtostderr \
-	-v=2
+	-v=4 \
+	-host=bborbe.devel.lf.seibert-media.net \
+	-user=bborbe \
+	-port=22 \
+	-source=/opt/apache-maven-3.3.9 \
+	-target=/backup
 format:
 	find . -name "*.go" -exec gofmt -w "{}" \;
 	goimports -w=true .
