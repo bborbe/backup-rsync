@@ -7,7 +7,7 @@ import (
 )
 
 func TestCleanup(t *testing.T) {
-	err := cleanup(nil)
+	err := rsync(nil)
 	if err := AssertThat(err, NilValue()); err != nil {
 		t.Fatal(err)
 	}

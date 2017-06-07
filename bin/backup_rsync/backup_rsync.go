@@ -1,22 +1,24 @@
 package main
 
 import (
+	"context"
 	"runtime"
+	"time"
+
+	"github.com/bborbe/backup_rsync/archiver"
+	"github.com/bborbe/cron"
 	flag "github.com/bborbe/flagenv"
 	"github.com/golang/glog"
-	"time"
-	"context"
-	"github.com/bborbe/cron"
 )
 
 const (
-	defaultWait = time.Minute * 5
-	parameterWait = "wait"
+	defaultWait      = time.Minute * 5
+	parameterWait    = "wait"
 	parameterOneTime = "one-time"
 )
 
 var (
-	waitPtr = flag.Duration(parameterWait, defaultWait, "wait")
+	waitPtr    = flag.Duration(parameterWait, defaultWait, "wait")
 	oneTimePtr = flag.Bool(parameterOneTime, false, "exit after first fetch")
 )
 
@@ -35,13 +37,15 @@ func do() error {
 	cron := cron.New(
 		*oneTimePtr,
 		*waitPtr,
-		cleanup,
+		rsync,
 	)
 	return cron.Run(context.Background())
 }
 
-func cleanup(ctx context.Context) error {
+func rsync(ctx context.Context) error {
 	glog.V(1).Info("backup started")
 	defer glog.V(1).Info("backup finished")
-	return nil
+
+	backupArchiver := archiver.New()
+	return backupArchiver.Archiv(ctx)
 }
