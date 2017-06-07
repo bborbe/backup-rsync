@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/bborbe/backup_rsync/model"
+	"github.com/bborbe/backup_rsync/remote"
 	"github.com/bborbe/backup_rsync/rsync"
 	"github.com/golang/glog"
+	"time"
 )
 
 type backupArchiver struct {
@@ -13,8 +15,10 @@ type backupArchiver struct {
 	remoteHost            model.RemoteHost
 	remotePort            model.RemotePort
 	remoteUser            model.RemoteUser
+	privateKey            model.PrivateKey
 	linkDest              model.LinkDest
 	remoteDirectory       model.RemoteTargetDirectory
+	today                 time.Time
 }
 
 func New(
@@ -22,16 +26,20 @@ func New(
 	remoteHost model.RemoteHost,
 	remotePort model.RemotePort,
 	remoteUser model.RemoteUser,
+	privateKey model.PrivateKey,
 	linkDest model.LinkDest,
 	remoteDirectory model.RemoteTargetDirectory,
+	today time.Time,
 ) *backupArchiver {
 	b := new(backupArchiver)
 	b.backupSourceDirectory = backupSourceDirectory
 	b.remoteHost = remoteHost
 	b.remotePort = remotePort
 	b.remoteUser = remoteUser
+	b.privateKey = privateKey
 	b.linkDest = linkDest
 	b.remoteDirectory = remoteDirectory
+	b.today = today
 	return b
 }
 
@@ -40,15 +48,66 @@ func (b *backupArchiver) Run(ctx context.Context) error {
 	defer glog.V(1).Info("archiv finished")
 
 	if err := b.validate(); err != nil {
+		glog.V(1).Infof("validate failed: %v", err)
 		return err
 	}
 
-	if err := b.runRsync(ctx); err != nil {
+	exists, err := b.backupExists()
+	if err != nil {
+		glog.V(1).Infof("validate failed: %v", err)
+		return err
+	}
+	if exists {
+		glog.V(2).Infof("backup already exists")
+		return nil
+	}
+	if err := b.createIncompleteIfNotExists(); err != nil {
+		glog.V(1).Infof("create incomplete directory failed: %v", err)
+		return err
+	}
+	if err := b.createCurrentIfNotExists(); err != nil {
+		glog.V(1).Infof("create current directory failed: %v", err)
+		return err
+	}
+	if err := b.rsync(ctx); err != nil {
 		glog.V(1).Infof("run rsync failed: %v", err)
 		return err
 	}
-
+	if err := b.renameIncomplete(); err != nil {
+		return fmt.Errorf("rename incomplete failed: %v", err)
+	}
+	if err := b.updateCurrentSymlink(); err != nil {
+		return fmt.Errorf("update current symlink failed: %v", err)
+	}
 	return nil
+}
+
+func (b *backupArchiver) backupName() string {
+	return b.today.Format("2006-01-02")
+}
+
+func (b *backupArchiver) backupExists() (bool, error) {
+	return false, nil
+}
+
+func (b *backupArchiver) createIncompleteIfNotExists() error {
+	return nil
+}
+
+func (b *backupArchiver) renameIncomplete() error {
+	return nil
+}
+
+func (b *backupArchiver) updateCurrentSymlink() error {
+	return nil
+}
+
+func (b *backupArchiver) createCurrentIfNotExists() error {
+	return nil
+}
+
+func (b *backupArchiver) createRemoteExecutor() remote.CommandExecutor {
+	return remote.NewCommandExecutor(b.remoteUser, b.remoteHost, b.remotePort, b.privateKey)
 }
 
 func (b *backupArchiver) validate() error {
@@ -73,7 +132,7 @@ func (b *backupArchiver) validate() error {
 	return nil
 }
 
-func (b *backupArchiver) runRsync(ctx context.Context) error {
+func (b *backupArchiver) rsync(ctx context.Context) error {
 	rsyncCommand := rsync.New(
 		"-azP",
 		"--no-p",
@@ -87,6 +146,5 @@ func (b *backupArchiver) runRsync(ctx context.Context) error {
 		fmt.Sprintf("%s", b.backupSourceDirectory),
 		fmt.Sprintf("ssh://%s@%s:%d/%s", b.remoteUser, b.remoteHost, b.remotePort, b.remoteDirectory),
 	)
-
 	return rsyncCommand.Run(ctx)
 }

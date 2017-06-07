@@ -1,4 +1,4 @@
-package ssh
+package remote
 
 import (
 	"bytes"
@@ -9,43 +9,49 @@ import (
 	"time"
 )
 
-type backupSsh struct {
+type CommandExecutor interface {
+	ExecuteCommand(ctx context.Context, cmd string) (string, error)
+}
+
+type remoteExecutor struct {
 	user       model.RemoteUser
 	addr       model.RemoteHost
 	port       model.RemotePort
 	privateKey model.PrivateKey
-	cmd        string
+	timeout    time.Duration
 }
 
-func New(
+func NewCommandExecutor(
 	user model.RemoteUser,
 	addr model.RemoteHost,
 	port model.RemotePort,
 	privateKey model.PrivateKey,
-	cmd string,
-) *backupSsh {
-	b := new(backupSsh)
+) *remoteExecutor {
+	b := new(remoteExecutor)
 	b.user = user
 	b.addr = addr
 	b.port = port
 	b.privateKey = privateKey
-	b.cmd = cmd
+	b.timeout = 5 * time.Second
 	return b
 }
 
-func (b *backupSsh) Run(ctx context.Context) (string, error) {
-	key, err := ssh.ParsePrivateKey(b.privateKey)
+func (r *remoteExecutor) ExecuteCommand(ctx context.Context, cmd string) (string, error) {
+	if len(cmd) == 0 {
+		return "", fmt.Errorf("cmd empty")
+	}
+	key, err := ssh.ParsePrivateKey(r.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("parse private key failed: %v", err)
 	}
 	config := &ssh.ClientConfig{
-		User: b.user.String(),
+		User: r.user.String(),
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
 		},
-		Timeout: 5 * time.Second,
+		Timeout: r.timeout,
 	}
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", b.addr, b.port), config)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", r.addr, r.port), config)
 	if err != nil {
 		return "", fmt.Errorf("ssh connect failed: %v", err)
 	}
@@ -57,6 +63,6 @@ func (b *backupSsh) Run(ctx context.Context) (string, error) {
 	var buffer bytes.Buffer
 	session.Stdout = &buffer
 	//      session.Stdin = bytes.NewBufferString("My input")
-	err = session.Run(b.cmd)
+	err = session.Run(cmd)
 	return buffer.String(), err
 }

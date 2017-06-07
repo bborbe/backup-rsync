@@ -1,4 +1,4 @@
-package ssh
+package remote
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	ssh := New("", "", 22, nil, "")
-	_, err := ssh.Run(context.Background())
+	remote := NewCommandExecutor("", "", 22, nil)
+	_, err := remote.ExecuteCommand(context.Background(), "")
 	if err := AssertThat(err, NotNilValue()); err != nil {
 		t.Fatal(err)
 	}
@@ -30,8 +30,8 @@ func TestExecSuccess(t *testing.T) {
 	if err := AssertThat(err, NilValue()); err != nil {
 		t.Fatal(err)
 	}
-	ssh := New(model.RemoteUser(os.Getenv("USER")), "localhost", 22, privateKey, "ls")
-	content, err := ssh.Run(context.Background())
+	remote := NewCommandExecutor(model.RemoteUser(os.Getenv("USER")), "localhost", 22, privateKey)
+	content, err := remote.ExecuteCommand(context.Background(), "ls")
 	if err := AssertThat(err, NilValue()); err != nil {
 		t.Fatal(err)
 	}
@@ -52,8 +52,8 @@ func TestExecFail(t *testing.T) {
 	if err := AssertThat(err, NilValue()); err != nil {
 		t.Fatal(err)
 	}
-	ssh := New(model.RemoteUser(os.Getenv("USER")), "localhost", 22, privateKey, "cd /foo")
-	_, err = ssh.Run(context.Background())
+	remote := NewCommandExecutor(model.RemoteUser(os.Getenv("USER")), "localhost", 22, privateKey)
+	_, err = remote.ExecuteCommand(context.Background(), "cd /foo")
 	if err := AssertThat(err, NotNilValue()); err != nil {
 		t.Fatal(err)
 	}
