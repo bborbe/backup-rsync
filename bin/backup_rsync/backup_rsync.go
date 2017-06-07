@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"fmt"
 	"github.com/bborbe/backup_rsync/archiver"
 	"github.com/bborbe/backup_rsync/model"
 	"github.com/bborbe/cron"
@@ -13,15 +14,16 @@ import (
 )
 
 const (
-	defaultWait      = time.Minute * 5
-	parameterWait    = "wait"
-	parameterOneTime = "one-time"
-	parameterSource  = "source"
-	parameterHost    = "host"
-	parameterPort    = "port"
-	parameterUser    = "user"
-	parameterLink    = "link"
-	parameterTarget  = "target"
+	defaultWait         = time.Minute * 5
+	parameterWait       = "wait"
+	parameterOneTime    = "one-time"
+	parameterSource     = "source"
+	parameterHost       = "host"
+	parameterPort       = "port"
+	parameterUser       = "user"
+	parameterLink       = "link"
+	parameterTarget     = "target"
+	parameterPrivateKey = "privatekey"
 )
 
 var (
@@ -33,6 +35,7 @@ var (
 	remoteUserPtr            = flag.String(parameterUser, "", "remote user name")
 	linkDestPtr              = flag.String(parameterLink, "", "link dest")
 	remoteTargetDirectoryPtr = flag.String(parameterTarget, "", "remote target directory")
+	privateKeyPtr            = flag.String(parameterPrivateKey, "", "private key")
 )
 
 func main() {
@@ -59,14 +62,21 @@ func rsync(ctx context.Context) error {
 	glog.V(1).Info("backup started")
 	defer glog.V(1).Info("backup finished")
 
-	backupSourceDirectory := model.BackupSourceDirectory(*backupSourceDirectoryPtr)
-	remoteHost := model.RemoteHost(*remoteHostPtr)
-	remotePort := model.RemotePort(*remotePortPtr)
-	remoteUser := model.RemoteUser(*remoteUserPtr)
-	linkDest := model.LinkDest(*linkDestPtr)
-	remoteTargetDirectory := model.RemoteTargetDirectory(*remoteTargetDirectoryPtr)
+	privateKey, err := model.PrivateKeyFromFile(*privateKeyPtr)
+	if err != nil {
+		return fmt.Errorf("read private key failed: %v", err)
+	}
 
-	backupArchiver := archiver.New(backupSourceDirectory, remoteHost, remotePort, remoteUser, linkDest, remoteTargetDirectory)
+	backupArchiver := archiver.New(
+		model.BackupSourceDirectory(*backupSourceDirectoryPtr),
+		model.RemoteHost(*remoteHostPtr),
+		model.RemotePort(*remotePortPtr),
+		model.RemoteUser(*remoteUserPtr),
+		privateKey,
+		model.LinkDest(*linkDestPtr),
+		model.RemoteTargetDirectory(*remoteTargetDirectoryPtr),
+		time.Now(),
+	)
 
 	return backupArchiver.Run(ctx)
 }

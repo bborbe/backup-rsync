@@ -1,5 +1,5 @@
 hash: 12876dd533d9f5d34e67056e60762d8fee7d878fe5196c5529df996bf5500366
-updated: 2017-06-06T16:55:59.42007055+02:00
+updated: 2017-06-07T15:10:38.036073888+02:00
 imports:
 - name: github.com/bborbe/cron
   version: 807a2c6a298ae10a1c35f7f26815284599c6a622
@@ -7,6 +7,17 @@ imports:
   version: 4bf10dbe62f41ce40353a70225a84decfd16d3ac
 - name: github.com/golang/glog
   version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+- name: golang.org/x/crypto
+  version: e7ba82683099cae71475961448ab8f903ea77c26
+  subpackages:
+  - curve25519
+  - ed25519
+  - ed25519/internal/edwards25519
+  - ssh
 testImports:
 - name: github.com/bborbe/assert
   version: 2448f69a8cb98ee9e5744f678477959100ceb9d4
+- name: github.com/bborbe/io
+  version: 8c22cf733cf166b247318b0786eec0c7cad9208a
+  subpackages:
+  - util

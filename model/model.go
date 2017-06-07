@@ -1,5 +1,10 @@
 package model
 
+import (
+	"fmt"
+	"io/ioutil"
+)
+
 type BackupSourceDirectory string
 
 type RemoteHost string
@@ -17,3 +22,11 @@ type LinkDest string
 type RemoteTargetDirectory string
 
 type PrivateKey []byte
+
+func PrivateKeyFromFile(path string) (PrivateKey, error) {
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read file '%s' failed: %v", path, err)
+	}
+	return PrivateKey(content), nil
+}
