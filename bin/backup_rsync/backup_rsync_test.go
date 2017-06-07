@@ -1,9 +1,8 @@
 package main
 
 import (
-	"testing"
-
 	. "github.com/bborbe/assert"
+	"testing"
 )
 
 func TestCleanup(t *testing.T) {

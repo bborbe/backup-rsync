@@ -8,7 +8,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	archiver := New()
+	archiver := New("", "", 22, "", "", "")
 	if err := AssertThat(archiver.Archiv(context.Background()), NilValue()); err != nil {
 		t.Fatal(err)
 	}
