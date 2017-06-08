@@ -224,7 +224,7 @@ func (b *backupArchiver) rsync(ctx context.Context) error {
 		"--delete",
 		"--delete-excluded",
 		fmt.Sprintf("--port=%d", b.remotePort),
-		fmt.Sprintf("--link-dest=%s", b.remoteCurrentPath()),
+		fmt.Sprintf("--link-dest=%s%s", b.remoteCurrentPath(), b.backupSourceDirectory.String()),
 		fmt.Sprintf("%s%s", b.backupSourceBaseDirectory, b.backupSourceDirectory.String()),
 		fmt.Sprintf("%s@%s:%s", b.remoteUser, b.remoteHost, b.remoteIncompletePath()+b.backupSourceDirectory.String()),
 	)
