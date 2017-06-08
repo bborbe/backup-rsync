@@ -16,6 +16,7 @@ type backupArchiver struct {
 	remoteHost                model.RemoteHost
 	remotePort                model.RemotePort
 	remoteUser                model.RemoteUser
+	privatePath               model.PrivatePath
 	privateKey                model.PrivateKey
 	remoteDirectory           model.RemoteTargetDirectory
 	today                     time.Time
@@ -27,6 +28,7 @@ func New(
 	remoteHost model.RemoteHost,
 	remotePort model.RemotePort,
 	remoteUser model.RemoteUser,
+	privatePath model.PrivatePath,
 	privateKey model.PrivateKey,
 	remoteDirectory model.RemoteTargetDirectory,
 	today time.Time,
@@ -37,6 +39,7 @@ func New(
 	b.remoteHost = remoteHost
 	b.remotePort = remotePort
 	b.remoteUser = remoteUser
+	b.privatePath = privatePath
 	b.privateKey = privateKey
 	b.remoteDirectory = remoteDirectory
 	b.today = today
@@ -106,7 +109,7 @@ func (b *backupArchiver) remoteCurrentPath() string {
 func (b *backupArchiver) backupExists(ctx context.Context) (bool, error) {
 	dir := b.remoteBackupPath()
 	glog.V(4).Infof("check if directory %s exists", dir)
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
 		glog.V(4).Infof("directory %s does not exists", dir)
 		return false, nil
 	}
@@ -116,7 +119,7 @@ func (b *backupArchiver) backupExists(ctx context.Context) (bool, error) {
 
 func (b *backupArchiver) createIncompleteIfNotExists(ctx context.Context) error {
 	dir := b.remoteIncompletePath() + b.backupSourceDirectory.String()
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mkdir -p %s", dir)); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("mkdir -p %s", dir)); err != nil {
 		glog.V(4).Infof("create directory %s failed: %v", dir, err)
 		return err
 	}
@@ -126,7 +129,7 @@ func (b *backupArchiver) createIncompleteIfNotExists(ctx context.Context) error 
 
 func (b *backupArchiver) renameIncomplete(ctx context.Context) error {
 	glog.V(4).Infof("rename incomplete to date")
-	_, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mv %s %s", b.remoteIncompletePath(), b.remoteBackupPath()))
+	_, err := b.remoteSudo(ctx, fmt.Sprintf("mv %s %s", b.remoteIncompletePath(), b.remoteBackupPath()))
 	if err != nil {
 		glog.V(4).Infof("rename incomplete to date failed: %v", err)
 		return err
@@ -137,11 +140,11 @@ func (b *backupArchiver) renameIncomplete(ctx context.Context) error {
 
 func (b *backupArchiver) updateCurrentSymlink(ctx context.Context) error {
 	glog.V(4).Infof("update current symlink")
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("rm %s", b.remoteCurrentPath())); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("rm %s", b.remoteCurrentPath())); err != nil {
 		glog.V(4).Infof("rename incomplete to date failed: %v", err)
 		return err
 	}
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("ln -s %s %s", b.backupName(), b.remoteCurrentPath())); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("ln -s %s %s", b.backupName(), b.remoteCurrentPath())); err != nil {
 		glog.V(4).Infof("link backup to current failed: %v", err)
 		return err
 	}
@@ -151,7 +154,7 @@ func (b *backupArchiver) updateCurrentSymlink(ctx context.Context) error {
 func (b *backupArchiver) remoteCurrentExists(ctx context.Context) (bool, error) {
 	dir := b.remoteCurrentPath()
 	glog.V(4).Infof("check if directory %s exists", dir)
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
 		glog.V(4).Infof("directory %s does not exists", dir)
 		return false, nil
 	}
@@ -170,11 +173,11 @@ func (b *backupArchiver) createCurrentIfNotExists(ctx context.Context) error {
 		glog.V(4).Infof("current already exists")
 		return nil
 	}
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mkdir -p %s", b.remoteEmptyPath())); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("mkdir -p %s", b.remoteEmptyPath())); err != nil {
 		glog.V(4).Infof("create directory %s failed: %v", b.remoteEmptyPath(), err)
 		return err
 	}
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("ln -s empty %s", b.remoteCurrentPath())); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("ln -s empty %s", b.remoteCurrentPath())); err != nil {
 		glog.V(4).Infof("link empty to current failed: %v", err)
 		return err
 	}
@@ -188,11 +191,20 @@ func (b *backupArchiver) createRemoteExecutor() remote.CommandExecutor {
 
 func (b *backupArchiver) remoteEmpty(ctx context.Context) error {
 	glog.V(4).Infof("remove empty directory")
-	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("rmdir %s", b.remoteEmptyPath())); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("rmdir %s", b.remoteEmptyPath())); err != nil {
 		glog.V(4).Infof("remove empty dir failed: %v", err)
 		return nil
 	}
 	return nil
+}
+
+func (b *backupArchiver) remoteSudo(ctx context.Context, cmd string) (string, error) {
+	glog.V(4).Infof("sudo exec '%s'", cmd)
+	content, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("sudo %s", cmd))
+	if err != nil {
+		glog.V(4).Infof("sudo exec '%s' failed: %v", cmd, err)
+	}
+	return content, err
 }
 
 func (b *backupArchiver) validate() error {
@@ -216,11 +228,14 @@ func (b *backupArchiver) validate() error {
 
 func (b *backupArchiver) rsync(ctx context.Context) error {
 	rsyncCommand := rsync.New(
-		"-azP",
-		"--no-p",
+		"--rsync-path",
+		"sudo rsync",
+		"-a",
+		"--progress",
+		"--compress",
 		"--numeric-ids",
 		"-e",
-		fmt.Sprintf("ssh -T -x -o StrictHostKeyChecking=no -p %d", b.remotePort),
+		fmt.Sprintf("ssh -T -x -o StrictHostKeyChecking=no -p %d -i %s", b.remotePort, b.privatePath.String()),
 		"--delete",
 		"--delete-excluded",
 		fmt.Sprintf("--port=%d", b.remotePort),

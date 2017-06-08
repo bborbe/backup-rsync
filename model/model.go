@@ -42,10 +42,14 @@ func appendSlash(name string) string {
 	return name + "/"
 }
 
-type PrivateKey []byte
+type PrivatePath string
 
-func PrivateKeyFromFile(path string) (PrivateKey, error) {
-	path, err := util.NormalizePath(path)
+func (p PrivatePath) String() string {
+	return string(p)
+}
+
+func (p PrivatePath) PrivateKey() (PrivateKey, error) {
+	path, err := util.NormalizePath(p.String())
 	if err != nil {
 		return nil, fmt.Errorf("normalize path '%s' failed: %v", path, err)
 	}
@@ -55,3 +59,5 @@ func PrivateKeyFromFile(path string) (PrivateKey, error) {
 	}
 	return PrivateKey(content), nil
 }
+
+type PrivateKey []byte

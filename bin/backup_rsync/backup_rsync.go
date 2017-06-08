@@ -2,28 +2,26 @@ package main
 
 import (
 	"context"
-	"runtime"
-	"time"
-
-	"fmt"
 	"github.com/bborbe/backup_rsync/archiver"
 	"github.com/bborbe/backup_rsync/model"
 	"github.com/bborbe/cron"
 	flag "github.com/bborbe/flagenv"
 	"github.com/golang/glog"
+	"runtime"
+	"time"
 )
 
 const (
-	defaultWait         = time.Minute * 5
-	parameterWait       = "wait"
-	parameterOneTime    = "one-time"
-	parameterSource     = "source"
-	parameterHost       = "host"
-	parameterPort       = "port"
-	parameterUser       = "user"
-	parameterTarget     = "target"
-	parameterPrivateKey = "privatekey"
-	parameterBasedir    = "basedir"
+	defaultWait             = time.Minute * 5
+	parameterWait           = "wait"
+	parameterOneTime        = "one-time"
+	parameterSource         = "source"
+	parameterHost           = "host"
+	parameterPort           = "port"
+	parameterUser           = "user"
+	parameterTarget         = "target"
+	parameterPrivateKeyPath = "privatekey"
+	parameterBasedir        = "basedir"
 )
 
 var (
@@ -34,7 +32,7 @@ var (
 	remotePortPtr            = flag.Int(parameterPort, 22, "remote ssh port")
 	remoteUserPtr            = flag.String(parameterUser, "", "remote user name")
 	remoteTargetDirectoryPtr = flag.String(parameterTarget, "", "remote target directory")
-	privateKeyPtr            = flag.String(parameterPrivateKey, "~/.ssh/id_rsa", "private key")
+	privateKeyPathPtr        = flag.String(parameterPrivateKeyPath, "~/.ssh/id_rsa", "path to private key")
 	parameterBasedirPtr      = flag.String(parameterBasedir, "", "backup base directory")
 )
 
@@ -61,18 +59,19 @@ func do() error {
 func rsync(ctx context.Context) error {
 	glog.V(1).Info("backup started")
 	defer glog.V(1).Info("backup finished")
-
-	privateKey, err := model.PrivateKeyFromFile(*privateKeyPtr)
+	privateKeyPath := model.PrivatePath(*privateKeyPathPtr)
+	privateKey, err := privateKeyPath.PrivateKey()
 	if err != nil {
-		return fmt.Errorf("read private key failed: %v", err)
+		glog.V(4).Infof("read private key failed: %v", err)
+		return err
 	}
-
 	backupArchiver := archiver.New(
 		model.BackupSourceDirectory(*backupSourceDirectoryPtr),
 		model.BackupSourceBaseDirectory(*parameterBasedirPtr),
 		model.RemoteHost(*remoteHostPtr),
 		model.RemotePort(*remotePortPtr),
 		model.RemoteUser(*remoteUserPtr),
+		privateKeyPath,
 		privateKey,
 		model.RemoteTargetDirectory(*remoteTargetDirectoryPtr),
 		time.Now(),
