@@ -15,6 +15,7 @@ run:
 	backup_rsync \
 	-logtostderr \
 	-v=4 \
+	-one-time \
 	-host=bborbe.devel.lf.seibert-media.net \
 	-user=bborbe \
 	-port=22 \
