@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bborbe/backup_rsync/model"
+	"github.com/golang/glog"
 	"golang.org/x/crypto/ssh"
 	"time"
 )
@@ -38,8 +39,10 @@ func NewCommandExecutor(
 
 func (r *remoteExecutor) ExecuteCommand(ctx context.Context, cmd string) (string, error) {
 	if len(cmd) == 0 {
+		glog.V(4).Infof("command is empty")
 		return "", fmt.Errorf("cmd empty")
 	}
+	glog.V(4).Infof("execute command %s", cmd)
 	key, err := ssh.ParsePrivateKey(r.privateKey)
 	if err != nil {
 		return "", fmt.Errorf("parse private key failed: %v", err)

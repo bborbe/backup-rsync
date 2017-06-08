@@ -11,17 +11,19 @@ import (
 )
 
 type backupArchiver struct {
-	backupSourceDirectory model.BackupSourceDirectory
-	remoteHost            model.RemoteHost
-	remotePort            model.RemotePort
-	remoteUser            model.RemoteUser
-	privateKey            model.PrivateKey
-	remoteDirectory       model.RemoteTargetDirectory
-	today                 time.Time
+	backupSourceDirectory     model.BackupSourceDirectory
+	backupSourceBaseDirectory model.BackupSourceBaseDirectory
+	remoteHost                model.RemoteHost
+	remotePort                model.RemotePort
+	remoteUser                model.RemoteUser
+	privateKey                model.PrivateKey
+	remoteDirectory           model.RemoteTargetDirectory
+	today                     time.Time
 }
 
 func New(
 	backupSourceDirectory model.BackupSourceDirectory,
+	backupSourceBaseDirectory model.BackupSourceBaseDirectory,
 	remoteHost model.RemoteHost,
 	remotePort model.RemotePort,
 	remoteUser model.RemoteUser,
@@ -31,6 +33,7 @@ func New(
 ) *backupArchiver {
 	b := new(backupArchiver)
 	b.backupSourceDirectory = backupSourceDirectory
+	b.backupSourceBaseDirectory = backupSourceBaseDirectory
 	b.remoteHost = remoteHost
 	b.remotePort = remotePort
 	b.remoteUser = remoteUser
@@ -43,13 +46,11 @@ func New(
 func (b *backupArchiver) Run(ctx context.Context) error {
 	glog.V(1).Info("archiv started")
 	defer glog.V(1).Info("archiv finished")
-
 	if err := b.validate(); err != nil {
 		glog.V(1).Infof("validate failed: %v", err)
 		return err
 	}
-
-	exists, err := b.backupExists()
+	exists, err := b.backupExists(ctx)
 	if err != nil {
 		glog.V(1).Infof("validate failed: %v", err)
 		return err
@@ -58,11 +59,11 @@ func (b *backupArchiver) Run(ctx context.Context) error {
 		glog.V(2).Infof("backup already exists")
 		return nil
 	}
-	if err := b.createIncompleteIfNotExists(); err != nil {
+	if err := b.createIncompleteIfNotExists(ctx); err != nil {
 		glog.V(1).Infof("create incomplete directory failed: %v", err)
 		return err
 	}
-	if err := b.createCurrentIfNotExists(); err != nil {
+	if err := b.createCurrentIfNotExists(ctx); err != nil {
 		glog.V(1).Infof("create current directory failed: %v", err)
 		return err
 	}
@@ -70,11 +71,14 @@ func (b *backupArchiver) Run(ctx context.Context) error {
 		glog.V(1).Infof("run rsync failed: %v", err)
 		return err
 	}
-	if err := b.renameIncomplete(); err != nil {
+	if err := b.renameIncomplete(ctx); err != nil {
 		return fmt.Errorf("rename incomplete failed: %v", err)
 	}
-	if err := b.updateCurrentSymlink(); err != nil {
+	if err := b.updateCurrentSymlink(ctx); err != nil {
 		return fmt.Errorf("update current symlink failed: %v", err)
+	}
+	if err := b.remoteEmpty(ctx); err != nil {
+		return fmt.Errorf("remove empty failed: %v", err)
 	}
 	return nil
 }
@@ -83,28 +87,112 @@ func (b *backupArchiver) backupName() string {
 	return b.today.Format("2006-01-02")
 }
 
-func (b *backupArchiver) backupExists() (bool, error) {
-	return false, nil
+func (b *backupArchiver) remoteBackupPath() string {
+	return b.remoteDirectory.Join(b.backupName())
 }
 
-func (b *backupArchiver) createIncompleteIfNotExists() error {
+func (b *backupArchiver) remoteIncompletePath() string {
+	return b.remoteDirectory.Join("incomplete")
+}
+
+func (b *backupArchiver) remoteEmptyPath() string {
+	return b.remoteDirectory.Join("empty")
+}
+
+func (b *backupArchiver) remoteCurrentPath() string {
+	return b.remoteDirectory.Join("current")
+}
+
+func (b *backupArchiver) backupExists(ctx context.Context) (bool, error) {
+	dir := b.remoteBackupPath()
+	glog.V(4).Infof("check if directory %s exists", dir)
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+		glog.V(4).Infof("directory %s does not exists", dir)
+		return false, nil
+	}
+	glog.V(4).Infof("directory %s does exists", dir)
+	return true, nil
+}
+
+func (b *backupArchiver) createIncompleteIfNotExists(ctx context.Context) error {
+	dir := b.remoteIncompletePath() + b.backupSourceDirectory.String()
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mkdir -p %s", dir)); err != nil {
+		glog.V(4).Infof("create directory %s failed: %v", dir, err)
+		return err
+	}
+	glog.V(4).Infof("create directory %s created", dir)
 	return nil
 }
 
-func (b *backupArchiver) renameIncomplete() error {
+func (b *backupArchiver) renameIncomplete(ctx context.Context) error {
+	glog.V(4).Infof("rename incomplete to date")
+	_, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mv %s %s", b.remoteIncompletePath(), b.remoteBackupPath()))
+	if err != nil {
+		glog.V(4).Infof("rename incomplete to date failed: %v", err)
+		return err
+	}
+	glog.V(4).Infof("rename incomplete to date completed")
 	return nil
 }
 
-func (b *backupArchiver) updateCurrentSymlink() error {
+func (b *backupArchiver) updateCurrentSymlink(ctx context.Context) error {
+	glog.V(4).Infof("update current symlink")
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("rm %s", b.remoteCurrentPath())); err != nil {
+		glog.V(4).Infof("rename incomplete to date failed: %v", err)
+		return err
+	}
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("ln -s %s %s", b.backupName(), b.remoteCurrentPath())); err != nil {
+		glog.V(4).Infof("link backup to current failed: %v", err)
+		return err
+	}
 	return nil
 }
 
-func (b *backupArchiver) createCurrentIfNotExists() error {
+func (b *backupArchiver) remoteCurrentExists(ctx context.Context) (bool, error) {
+	dir := b.remoteCurrentPath()
+	glog.V(4).Infof("check if directory %s exists", dir)
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+		glog.V(4).Infof("directory %s does not exists", dir)
+		return false, nil
+	}
+	glog.V(4).Infof("directory %s does exists", dir)
+	return true, nil
+}
+
+func (b *backupArchiver) createCurrentIfNotExists(ctx context.Context) error {
+	glog.V(4).Infof("create current if not exists started")
+	exists, err := b.remoteCurrentExists(ctx)
+	if err != nil {
+		glog.V(4).Infof("check current exists failed: %v", err)
+		return err
+	}
+	if exists {
+		glog.V(4).Infof("current already exists")
+		return nil
+	}
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("mkdir -p %s", b.remoteEmptyPath())); err != nil {
+		glog.V(4).Infof("create directory %s failed: %v", b.remoteEmptyPath(), err)
+		return err
+	}
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("ln -s empty %s", b.remoteCurrentPath())); err != nil {
+		glog.V(4).Infof("link empty to current failed: %v", err)
+		return err
+	}
+	glog.V(4).Infof("create current if not exists finished")
 	return nil
 }
 
 func (b *backupArchiver) createRemoteExecutor() remote.CommandExecutor {
 	return remote.NewCommandExecutor(b.remoteUser, b.remoteHost, b.remotePort, b.privateKey)
+}
+
+func (b *backupArchiver) remoteEmpty(ctx context.Context) error {
+	glog.V(4).Infof("remove empty directory")
+	if _, err := b.createRemoteExecutor().ExecuteCommand(ctx, fmt.Sprintf("rmdir %s", b.remoteEmptyPath())); err != nil {
+		glog.V(4).Infof("remove empty dir failed: %v", err)
+		return nil
+	}
+	return nil
 }
 
 func (b *backupArchiver) validate() error {
@@ -136,9 +224,9 @@ func (b *backupArchiver) rsync(ctx context.Context) error {
 		"--delete",
 		"--delete-excluded",
 		fmt.Sprintf("--port=%d", b.remotePort),
-		//fmt.Sprintf("--link-dest=%s", "current"),
-		fmt.Sprintf("%s", b.backupSourceDirectory),
-		fmt.Sprintf("%s@%s:%s", b.remoteUser, b.remoteHost, b.remoteDirectory),
+		fmt.Sprintf("--link-dest=%s", b.remoteCurrentPath()),
+		fmt.Sprintf("%s%s", b.backupSourceBaseDirectory, b.backupSourceDirectory.String()),
+		fmt.Sprintf("%s@%s:%s", b.remoteUser, b.remoteHost, b.remoteIncompletePath()+b.backupSourceDirectory.String()),
 	)
 	return rsyncCommand.Run(ctx)
 }

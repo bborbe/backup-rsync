@@ -23,6 +23,7 @@ const (
 	parameterUser       = "user"
 	parameterTarget     = "target"
 	parameterPrivateKey = "privatekey"
+	parameterBasedir    = "basedir"
 )
 
 var (
@@ -34,6 +35,7 @@ var (
 	remoteUserPtr            = flag.String(parameterUser, "", "remote user name")
 	remoteTargetDirectoryPtr = flag.String(parameterTarget, "", "remote target directory")
 	privateKeyPtr            = flag.String(parameterPrivateKey, "~/.ssh/id_rsa", "private key")
+	parameterBasedirPtr      = flag.String(parameterBasedir, "", "backup base directory")
 )
 
 func main() {
@@ -67,6 +69,7 @@ func rsync(ctx context.Context) error {
 
 	backupArchiver := archiver.New(
 		model.BackupSourceDirectory(*backupSourceDirectoryPtr),
+		model.BackupSourceBaseDirectory(*parameterBasedirPtr),
 		model.RemoteHost(*remoteHostPtr),
 		model.RemotePort(*remotePortPtr),
 		model.RemoteUser(*remoteUserPtr),

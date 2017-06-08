@@ -4,9 +4,16 @@ import (
 	"fmt"
 	"github.com/bborbe/io/util"
 	"io/ioutil"
+	"strings"
 )
 
+type BackupSourceBaseDirectory string
+
 type BackupSourceDirectory string
+
+func (b BackupSourceDirectory) String() string {
+	return appendSlash(string(b))
+}
 
 type RemoteHost string
 
@@ -19,6 +26,21 @@ func (r RemoteUser) String() string {
 }
 
 type RemoteTargetDirectory string
+
+func (r RemoteTargetDirectory) Join(name string) string {
+	return fmt.Sprintf("%s%s", r.String(), name)
+}
+
+func (r RemoteTargetDirectory) String() string {
+	return appendSlash(string(r))
+}
+
+func appendSlash(name string) string {
+	if strings.HasSuffix(name, "/") {
+		return name
+	}
+	return name + "/"
+}
 
 type PrivateKey []byte
 
