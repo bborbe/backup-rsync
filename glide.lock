@@ -1,10 +1,14 @@
-hash: 12876dd533d9f5d34e67056e60762d8fee7d878fe5196c5529df996bf5500366
-updated: 2017-06-07T15:10:38.036073888+02:00
+hash: 3df833bcfc560a0428af7d663bfdd9df8dd1aa8b002942d21fb3b47bc6651123
+updated: 2017-06-08T15:08:04.827004737+02:00
 imports:
 - name: github.com/bborbe/cron
   version: 807a2c6a298ae10a1c35f7f26815284599c6a622
 - name: github.com/bborbe/flagenv
   version: 4bf10dbe62f41ce40353a70225a84decfd16d3ac
+- name: github.com/bborbe/io
+  version: 8c22cf733cf166b247318b0786eec0c7cad9208a
+  subpackages:
+  - util
 - name: github.com/golang/glog
   version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
 - name: golang.org/x/crypto
@@ -17,7 +21,3 @@ imports:
 testImports:
 - name: github.com/bborbe/assert
   version: 2448f69a8cb98ee9e5744f678477959100ceb9d4
-- name: github.com/bborbe/io
-  version: 8c22cf733cf166b247318b0786eec0c7cad9208a
-  subpackages:
-  - util

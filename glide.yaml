@@ -2,12 +2,12 @@ package: github.com/bborbe/backup_rsync
 import:
 - package: github.com/bborbe/cron
 - package: github.com/bborbe/flagenv
+- package: github.com/bborbe/io
+  subpackages:
+  - util
 - package: github.com/golang/glog
 - package: golang.org/x/crypto
   subpackages:
   - ssh
 testImport:
 - package: github.com/bborbe/assert
-- package: github.com/bborbe/io
-  subpackages:
-  - util
