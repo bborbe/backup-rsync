@@ -17,8 +17,9 @@ run:
 	-v=4 \
 	-one-time \
 	-host=bborbe.devel.lf.seibert-media.net \
-	-user=bborbe \
+	-user=backup \
 	-port=22 \
+	-privatekey=/Users/bborbe/Documents/backup-ssh-keys/id_rsa \
 	-source=/opt/apache-maven-3.3.9/ \
 	-target=/backup/
 format:

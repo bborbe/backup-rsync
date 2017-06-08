@@ -68,5 +68,8 @@ func (r *remoteExecutor) ExecuteCommand(ctx context.Context, cmd string) (string
 	session.Stdout = &buffer
 	//      session.Stdin = bytes.NewBufferString("My input")
 	err = session.Run(cmd)
+	if err != nil && glog.V(4) {
+		glog.Infof("execute command failed: %s", buffer.String())
+	}
 	return buffer.String(), err
 }

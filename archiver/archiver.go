@@ -109,7 +109,7 @@ func (b *backupArchiver) remoteCurrentPath() string {
 func (b *backupArchiver) backupExists(ctx context.Context) (bool, error) {
 	dir := b.remoteBackupPath()
 	glog.V(4).Infof("check if directory %s exists", dir)
-	if _, err := b.remoteSudo(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("sh -c 'cd %s'", dir)); err != nil {
 		glog.V(4).Infof("directory %s does not exists", dir)
 		return false, nil
 	}
@@ -154,7 +154,7 @@ func (b *backupArchiver) updateCurrentSymlink(ctx context.Context) error {
 func (b *backupArchiver) remoteCurrentExists(ctx context.Context) (bool, error) {
 	dir := b.remoteCurrentPath()
 	glog.V(4).Infof("check if directory %s exists", dir)
-	if _, err := b.remoteSudo(ctx, fmt.Sprintf("cd %s", dir)); err != nil {
+	if _, err := b.remoteSudo(ctx, fmt.Sprintf("sh -c 'cd %s'", dir)); err != nil {
 		glog.V(4).Infof("directory %s does not exists", dir)
 		return false, nil
 	}
