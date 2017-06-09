@@ -1,0 +1,15 @@
+{
+  "name": "backup-rsync",
+  "section": "utils",
+  "priority": "optional",
+  "architecture": "amd64",
+  "maintainer": "Benjamin Borbe <bborbe@rocketnews.de>",
+  "description": "Backup Rsync",
+  "postinst": "src/github.com/bborbe/backup_rsync/postinst",
+  "files": [
+    {
+      "source": "bin/backup_rsync",
+      "target": "/opt/backup_rsync/bin/backup_rsync"
+    }
+  ]
+}
