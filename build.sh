@@ -23,7 +23,7 @@ do
   XML=$REPORT_DIR/`pkg2xmlname $PACKAGE`
   OUT=$XML.out
   go test -i $PACKAGE
-  go test -v $PACKAGE | tee $OUT
+  go test -short -v $PACKAGE | tee $OUT
   cat $OUT
   go2xunit -fail=true -input $OUT -output $XML
   rc=$?
