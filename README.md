@@ -41,6 +41,7 @@ backup_rsync \
 backup ALL=NOPASSWD: /bin/ln -s [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] /backup/current
 backup ALL=NOPASSWD: /bin/ln -s empty /backup/current
 backup ALL=NOPASSWD: /bin/ls /backup/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] 
+backup ALL=NOPASSWD: /bin/ls /backup/current 
 backup ALL=NOPASSWD: /bin/mkdir -p /backup/empty
 backup ALL=NOPASSWD: /bin/mkdir -p /backup/incomplete/*
 backup ALL=NOPASSWD: /bin/mv /backup/incomplete /backup/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]
