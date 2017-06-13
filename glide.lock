@@ -1,5 +1,5 @@
 hash: 3df833bcfc560a0428af7d663bfdd9df8dd1aa8b002942d21fb3b47bc6651123
-updated: 2017-06-08T15:08:04.827004737+02:00
+updated: 2017-06-13T13:11:28.084955169+02:00
 imports:
 - name: github.com/bborbe/cron
   version: 807a2c6a298ae10a1c35f7f26815284599c6a622

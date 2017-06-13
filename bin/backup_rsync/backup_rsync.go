@@ -48,12 +48,16 @@ func main() {
 }
 
 func do() error {
-	cron := cron.New(
-		*oneTimePtr,
-		*waitPtr,
-		rsync,
-	)
-	return cron.Run(context.Background())
+	var c cron.Cron
+	if *oneTimePtr {
+		c = cron.NewOneTimeCron(rsync)
+	} else {
+		c = cron.NewWaitCron(
+			*waitPtr,
+			rsync,
+		)
+	}
+	return c.Run(context.Background())
 }
 
 func rsync(ctx context.Context) error {
