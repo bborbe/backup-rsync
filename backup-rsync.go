@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/bborbe/backup_rsync/archiver"
-	"github.com/bborbe/backup_rsync/model"
+	"github.com/bborbe/backup-rsync/archiver"
+	"github.com/bborbe/backup-rsync/model"
 	"github.com/bborbe/cron"
 	flag "github.com/bborbe/flagenv"
 	"github.com/golang/glog"

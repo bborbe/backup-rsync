@@ -3,5 +3,5 @@ MAINTAINER Benjamin Borbe <bborbe@rocketnews.de>
 
 RUN apk add --update ca-certificates rsync openssh bash && rm -rf /var/cache/apk/*
 
-COPY backup_rsync /
-ENTRYPOINT ["/backup_rsync"]
+COPY backup-rsync /
+ENTRYPOINT ["/backup-rsync"]

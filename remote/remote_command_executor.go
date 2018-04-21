@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/bborbe/backup_rsync/model"
+	"github.com/bborbe/backup-rsync/model"
 	"github.com/golang/glog"
 	"golang.org/x/crypto/ssh"
 	"time"

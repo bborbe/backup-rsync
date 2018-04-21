@@ -8,17 +8,6 @@
   revision = "765570a0aaf5913880d33fee2dd7e4c52b294021"
 
 [[projects]]
-  name = "github.com/bborbe/backup_rsync"
-  packages = [
-    "archiver",
-    "model",
-    "remote",
-    "rsync"
-  ]
-  revision = "8722b26d3d33f06e77448464d3149b26076bd4f3"
-  version = "1.0.1"
-
-[[projects]]
   branch = "master"
   name = "github.com/bborbe/cron"
   packages = ["."]
@@ -64,6 +53,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "847ba0d6b24683889deaad9b422fc2ad18b7e02ee3ad9269a8d8a71411e6e97a"
+  inputs-digest = "544d49c3c7a1a6e232bf89d7fb06ba05f303b5e02a5fb5bcc9e3a65f96a19cbc"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -3,9 +3,9 @@ package archiver
 import (
 	"context"
 	"fmt"
-	"github.com/bborbe/backup_rsync/model"
-	"github.com/bborbe/backup_rsync/remote"
-	"github.com/bborbe/backup_rsync/rsync"
+	"github.com/bborbe/backup-rsync/model"
+	"github.com/bborbe/backup-rsync/remote"
+	"github.com/bborbe/backup-rsync/rsync"
 	"github.com/golang/glog"
 	"time"
 )
